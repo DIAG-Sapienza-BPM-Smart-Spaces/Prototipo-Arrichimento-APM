@@ -1,0 +1,160 @@
+{
+  "_meta": {
+    "version": "2.0",
+    "language": "it",
+    "description": "Enriched keyword taxonomy for Cotral bus maintenance records. Each keyword has Italian description, English equivalent, and common aliases from technician jargon."
+  },
+
+  "luogo": {
+    "description": "Location where the fault occurred or rescue took place",
+    "values": ["DEPOSITO", "STRADA", "CAPOLINEA", "N/A"],
+    "note": "Free extraction field — LLM extracts location name directly from text"
+  },
+
+  "tipo_intervento": {
+    "description": "Whether the intervention happened on-road or in the workshop",
+    "values": ["OFFICINA", "STRADA", "SOCCORSO_STRADALE"],
+    "descriptions": {
+      "OFFICINA": "Riparazione effettuata in officina, deposito, stallo di lavoro. Workshop repair.",
+      "STRADA": "Riparazione effettuata su strada senza soccorso. Roadside repair without rescue.",
+      "SOCCORSO_STRADALE": "Soccorso con carrellone, traino, rimorchio. Bus ritirato, fermo su strada. Roadside rescue."
+    }
+  },
+
+  "sintomo": {
+    "description": "The reported symptom or fault type",
+    "values": [
+      "NON_PARTE", "PERDITA_LIQUIDO", "PERDITA_OLIO", "PERDITA_ARIA",
+      "PERDITA_GASOLIO", "AC_NON_FUNZIONA", "SPIA_ACCESA", "GUASTO_ADBLUE",
+      "GUASTO_ELETTRICO", "RUMORE_ANOMALO", "NON_ACCELERA",
+      "RISCALDAMENTO_NON_FUNZIONA", "SURRISCALDAMENTO", "VIBRAZIONE",
+      "BLOCCO_MOTORE", "NESSUN_GUASTO", "GUASTO_MECCANICO", "ALTRO"
+    ],
+    "descriptions": {
+      "NON_PARTE": "Il veicolo non si avvia, non parte, non accende, non si mette in moto. Vehicle won't start.",
+      "PERDITA_LIQUIDO": "Perdita di acqua, liquido refrigerante, antigelo. Basso livello liquido. Coolant or water leak.",
+      "PERDITA_OLIO": "Perdita di olio motore, olio idraulico, macchie di olio. Oil leak.",
+      "PERDITA_ARIA": "Perdita di aria dall impianto pneumatico, freni, sospensioni. Air leak.",
+      "PERDITA_GASOLIO": "Perdita di gasolio, carburante, odore di gasolio. Fuel/diesel leak.",
+      "AC_NON_FUNZIONA": "Aria condizionata non funziona, non raffredda, A/C guasta, clima non efficiente. A/C failure.",
+      "SPIA_ACCESA": "Spia accesa, spia rossa, spia motore, spia avaria, spia limite potenza. Warning light on.",
+      "GUASTO_ADBLUE": "Problema AdBlue, SCR, limite potenza per AdBlue, pompa AdBlue. AdBlue system fault.",
+      "GUASTO_ELETTRICO": "Guasto elettrico, corto circuito, problema elettrico, malfunzionamento elettronico. Electrical fault.",
+      "RUMORE_ANOMALO": "Rumore anomalo, rumoroso, vibrazione udibile, cigolio. Abnormal noise.",
+      "NON_ACCELERA": "Non accelera, mancanza potenza, perde potenza, rallentamento. Loss of power.",
+      "RISCALDAMENTO_NON_FUNZIONA": "Riscaldamento non funziona, Webasto guasto, no calore in abitacolo. Heater not working.",
+      "SURRISCALDAMENTO": "Temperatura alta, surriscaldamento motore, temperatura acqua alta. Engine overheating.",
+      "VIBRAZIONE": "Vibrazione anomala, trema, scuote. Abnormal vibration.",
+      "BLOCCO_MOTORE": "Motore bloccato, motore si spegne in marcia, arresto improvviso. Engine stall or seizure.",
+      "NESSUN_GUASTO": "Nessun guasto, manutenzione programmata, controllo periodico, T1N, T2. Scheduled maintenance, no fault.",
+      "GUASTO_MECCANICO": "Guasto meccanico generale, componente bloccato, non si muove, non si regola, rotto, difettoso. General mechanical failure, stuck or broken parts (e.g., seats, wipers, doors).",
+      "ALTRO": "Sintomo non classificabile nelle categorie precedenti. Other symptom."
+    }
+  },
+
+  "sistema": {
+    "description": "The vehicle system affected",
+    "values": [
+      "MOTORE", "CLIMATIZZAZIONE", "RAFFREDDAMENTO", "IMPIANTO_ELETTRICO",
+      "TRASMISSIONE", "ADBLUE", "CARROZZERIA", "PNEUMATICI", "FRENI",
+      "SOSPENSIONI", "IMPIANTO_IDRAULICO", "SCARICO", "ALIMENTAZIONE",
+      "STERZO", "ILLUMINAZIONE", "VIDEOSORVEGLIANZA", "PORTE", "GENERALE"
+    ],
+    "descriptions": {
+      "MOTORE": "Motore, blocco motore, cilindri, pistoni, testata, supporti motore, cinghia. Engine and engine mounts.",
+      "CLIMATIZZAZIONE": "Aria condizionata, compressore AC, condensatore, gas refrigerante R134a, evaporatore. A/C system.",
+      "RAFFREDDAMENTO": "Circuito refrigerante, pompa acqua, radiatore, manicotto, termostato, liquido refrigerante, antigelo. Cooling system.",
+      "IMPIANTO_ELETTRICO": "Centralina ECU, sensori, batteria, alternatore, cablaggi, connettori, fusibili, motorino avviamento. Electrical system.",
+      "TRASMISSIONE": "Cambio, frizione, trasmissione, albero di trasmissione, giunto cardanico. Transmission.",
+      "ADBLUE": "Impianto AdBlue, pompa AdBlue, SCR, catalizzatore, serbatoio AdBlue, iniettore AdBlue. AdBlue/SCR system.",
+      "CARROZZERIA": "Carrozzeria, paraurti, cofano, sportello, vetri, tergicristalli, specchietti, sedili. Body and panels.",
+      "PNEUMATICI": "Pneumatici, gomme, cerchi, pressione gomme. Tires.",
+      "FRENI": "Freni, pastiglie, dischi freno, pinza, tubo freno, perdita aria freni, ABS. Brake system.",
+      "SOSPENSIONI": "Sospensioni, ammortizzatori, molle, barra stabilizzatrice, soffietto aria, cuscinetti. Suspension.",
+      "IMPIANTO_IDRAULICO": "Impianto idraulico, servo sterzo, cilindri idraulici. Hydraulic system.",
+      "SCARICO": "Scarico, marmitta, tubo di scarico, catalizzatore, filtro antiparticolato DPF. Exhaust system.",
+      "ALIMENTAZIONE": "Alimentazione carburante, serbatoio gasolio, pompa carburante, filtro gasolio, pescaggio, iniettori. Fuel system.",
+      "STERZO": "Sterzo, servosterzo, piantone, scatola guida, tiranti. Steering system.",
+      "ILLUMINAZIONE": "Illuminazione, fari, luci, lampade, frecce, fanali. Lighting system.",
+      "VIDEOSORVEGLIANZA": "Videosorveglianza, telecamere, monitor, DVR, sistema CCTV. CCTV/surveillance system.",
+      "PORTE": "Porte passeggeri, porta anteriore, porta posteriore, meccanismo apertura, tirante porta. Door system.",
+      "GENERALE": "Sistema generale, controllo generale, nessun sistema specifico. General/unspecified system."
+    }
+  },
+
+  "azione": {
+    "description": "The maintenance action performed",
+    "values": [
+      "SOSTITUZIONE", "RIPARAZIONE", "CONTROLLO", "PULIZIA", "RIPRISTINO",
+      "RABBOCCO", "REGOLAZIONE", "MANUTENZIONE_PROGRAMMATA", "DIAGNOSI",
+      "SMONTAGGIO_RIMONTAGGIO", "SOCCORSO", "ALTRO"
+    ],
+    "descriptions": {
+      "SOSTITUZIONE": "Sostituzione di un pezzo, cambio componente. Part replacement.",
+      "RIPARAZIONE": "Riparazione, aggiustamento, risanamento di un componente esistente. Repair of existing part.",
+      "CONTROLLO": "Controllo, verifica, ispezione, ricerca guasto. Inspection or fault search.",
+      "PULIZIA": "Pulizia, lavaggio, sgrassaggio. Cleaning.",
+      "RIPRISTINO": "Ripristino funzionalita, reset, riattivazione. Restoration of function.",
+      "RABBOCCO": "Rabbocco liquido, rifornimento, aggiunta liquido refrigerante o olio. Fluid top-up.",
+      "REGOLAZIONE": "Regolazione, taratura, registrazione, calibrazione. Adjustment or calibration.",
+      "MANUTENZIONE_PROGRAMMATA": "Manutenzione programmata, manutenzione temporale T1N, T2, tagliando, controllo periodico. Scheduled maintenance.",
+      "DIAGNOSI": "Diagnosi elettronica, lettura codici errore, collegamento diagnosi, scansione. Electronic diagnosis.",
+      "SMONTAGGIO_RIMONTAGGIO": "Smontaggio e rimontaggio, S/R, apertura e chiusura per accesso. Disassembly and reassembly.",
+      "SOCCORSO": "Soccorso stradale, intervento con carrellone, traino. Roadside assistance.",
+      "ALTRO": "Azione non classificabile nelle categorie precedenti. Other action."
+    }
+  },
+
+  "componente": {
+    "description": "The specific component repaired or replaced",
+    "values": [
+      "CENTRALINA_ECU", "POMPA_ACQUA", "POMPA_ADBLUE", "CONDENSATORE",
+      "COMPRESSORE_AC", "RADIATORE", "MANICOTTO", "TUBO_FLESSIBILE",
+      "FILTRO", "VALVOLA", "INIETTORE", "BATTERIA", "ALTERNATORE",
+      "SENSORE_LIVELLO", "SENSORE_VELOCITA", "GUARNIZIONE", "O_RING",
+      "SOFFIETTO_ARIA", "PNEUMATICO", "TACHIGRAFO", "FRIZIONE_ELETTROMAGNETICA",
+      "SUPPORTO_MOTORE", "STABILIZZATORE", "MOTORINO_AVVIAMENTO",
+      "ELETTROVENTOLA", "ESSICCATORE"
+    ],
+    "descriptions": {
+      "CENTRALINA_ECU": "Centralina motore, ECU, unita di controllo elettronico. Engine control unit.",
+      "POMPA_ACQUA": "Pompa acqua, pompa di circolazione liquido refrigerante, girante pompa. Coolant/water pump.",
+      "POMPA_ADBLUE": "Pompa AdBlue, pompa dosatrice AdBlue. AdBlue pump.",
+      "CONDENSATORE": "Condensatore aria condizionata, condensatore AC. A/C condenser.",
+      "COMPRESSORE_AC": "Compressore aria condizionata, compressore climatizzazione. A/C compressor.",
+      "RADIATORE": "Radiatore, radiatore acqua, radiatore olio. Radiator.",
+      "MANICOTTO": "Manicotto, tubo gomma, raccordo gomma. Rubber hose/coupling.",
+      "TUBO_FLESSIBILE": "Tubo flessibile, flessibile freno, tubo idraulico. Flexible hose.",
+      "FILTRO": "Filtro, cartuccia filtro, filtro olio, filtro aria, filtro gasolio. Filter.",
+      "VALVOLA": "Valvola, valvola a tre vie, valvola due vie, elettrovalvola. Valve.",
+      "INIETTORE": "Iniettore, iniettore gasolio, iniettore AdBlue. Injector.",
+      "BATTERIA": "Batteria, accumulatore, batteria avviamento. Battery.",
+      "ALTERNATORE": "Alternatore, generatore. Alternator.",
+      "SENSORE_LIVELLO": "Sensore livello, sensore livello liquido, galleggiante. Level sensor.",
+      "SENSORE_VELOCITA": "Sensore velocita, sensore giri, pick-up velocita. Speed sensor.",
+      "GUARNIZIONE": "Guarnizione, guarnizione testata, anello di tenuta. Gasket/seal.",
+      "O_RING": "O-ring, anello OR, guarnizione toroidale. O-ring seal.",
+      "SOFFIETTO_ARIA": "Soffietto aria, molla pneumatica, air bellow. Air spring/bellow.",
+      "PNEUMATICO": "Pneumatico, gomma, copertone. Tire.",
+      "TACHIGRAFO": "Tachigrafo, tachigrafo digitale. Tachograph.",
+      "FRIZIONE_ELETTROMAGNETICA": "Frizione elettromagnetica, frizione compressore AC. Electromagnetic clutch.",
+      "SUPPORTO_MOTORE": "Supporto motore, silent block motore, antivibrante. Engine mount.",
+      "STABILIZZATORE": "Barra stabilizzatrice, gomma stabilizzatore, boccola. Stabilizer bar/bushing.",
+      "MOTORINO_AVVIAMENTO": "Motorino avviamento, motorino starter. Starter motor.",
+      "ELETTROVENTOLA": "Elettroventola, ventola raffreddamento, ventola radiatore. Cooling fan.",
+      "ESSICCATORE": "Essiccatore aria, cartuccia essiccatore. Air dryer."
+    },
+    "note": "Free extraction field — LLM extracts component name directly from text. Descriptions used for embedding matching."
+  },
+
+  "esito": {
+    "description": "Outcome of the intervention",
+    "values": ["POSITIVO", "NEGATIVO", "IN_ATTESA", "NON_SPECIFICATO"],
+    "descriptions": {
+      "POSITIVO": "Esito positivo, prova OK, problema risolto, funzionante. Positive outcome.",
+      "NEGATIVO": "Esito negativo, problema non risolto, ancora guasto. Negative outcome.",
+      "IN_ATTESA": "In attesa ricambi, in attesa pezzi, ordinato, da completare. Waiting for parts.",
+      "NON_SPECIFICATO": "Esito non menzionato nel testo. Outcome not specified."
+    }
+  }
+}

@@ -1,0 +1,49 @@
+{
+  "_meta": {
+    "purpose": "NAMING reference only — NOT the taxonomy. Turns an LLM's invented category name into a standard workshop term when naming a newly discovered cluster. Never consulted at classification time.",
+    "language": "it",
+    "extensible": true,
+    "style_rule": "Ogni descrizione: UNA frase semplice che elenca i COMPONENTI del sistema. Mai le attivita' (diagnosi, sostituzione, controllo), perche' compaiono in quasi ogni rapporto e trasformano il termine in un'attrattore. Nessun avviso incrociato tipo 'da non confondere con X'.",
+    "revision_2026_07": "Full clean rewrite in a single consistent pass. Piecemeal description edits were abandoned: because the naming step ranks candidates by the embedding of 'term: description', changing one description shifts the shortlist for every cluster, so incremental patches caused whack-a-mole regressions. A coherent rewrite changes everything once and is measured as a whole."
+  },
+  "POWERTRAIN": {
+    "MOTORE": "Il motore e i suoi organi interni: blocco, testata, pistoni, valvole, distribuzione, supporti motore, circuito dell'olio.",
+    "RAFFREDDAMENTO": "Il circuito che raffredda il motore: pompa dell'acqua, radiatore, ventola, termostato, manicotti, liquido refrigerante.",
+    "ALIMENTAZIONE": "Il circuito che porta il gasolio al motore: serbatoio, pompa del gasolio, filtri, iniettori, tubi del carburante.",
+    "SCARICO": "Lo scarico dei gas: collettore, marmitta, catalizzatore, filtro antiparticolato DPF.",
+    "ADBLUE_SCR": "Il sistema AdBlue che abbatte le emissioni: serbatoio AdBlue, pompa dosatrice, iniettore, catalizzatore SCR, sensori NOx.",
+    "TRASMISSIONE": "Cio' che trasmette il moto alle ruote: cambio, frizione, albero di trasmissione, giunti, differenziale."
+  },
+  "TELAIO": {
+    "FRENI": "L'impianto dei freni. Sugli autobus i freni funzionano ad aria: pastiglie, dischi, tamburi, rotocamere, cilindri dei freni, valvole dei freni, freno di stazionamento. Una perdita d'aria su un freno e' un guasto ai freni.",
+    "SOSPENSIONI": "Cio' che sostiene e ammortizza il veicolo: ammortizzatori, molle, soffietti ad aria, barre stabilizzatrici.",
+    "STERZO": "Lo sterzo: volante, piantone, scatola guida, tiranti, pompa del servosterzo.",
+    "PNEUMATICI": "Le gomme e le ruote: pneumatici, cerchi, pressione, forature, usura del battistrada.",
+    "ARIA_COMPRESSA": "Il sistema che produce l'aria compressa del veicolo: compressore, essiccatore, serbatoi dell'aria, valvole, tubi principali.",
+    "IMPIANTO_IDRAULICO": "Il sistema idraulico in pressione: pompe idrauliche, cilindri, centraline idrauliche, tubi in pressione."
+  },
+  "ELETTRICO_ELETTRONICO": {
+    "IMPIANTO_ELETTRICO": "L'impianto elettrico di base: cavi, connettori, fusibili, rele', batteria, alternatore, masse, cortocircuiti.",
+    "CENTRALINE_ELETTRONICHE": "Le centraline elettroniche di controllo (ECU) e le reti dati: centralina del motore, moduli di controllo, rete CAN. La centralina come pezzo guasto.",
+    "AVVIAMENTO": "Il sistema che avvia il motore: motorino di avviamento, teleruttore, circuito di avviamento.",
+    "ILLUMINAZIONE": "Le luci del veicolo: fari, fanali, frecce, luci interne, lampade."
+  },
+  "CARROZZERIA_ABITACOLO": {
+    "CARROZZERIA": "La scocca e le parti esterne: pannelli, paraurti, sportelli, vetri, specchietti, tergicristalli, lavavetri.",
+    "PORTE": "Le porte dei passeggeri e i loro meccanismi: attuatori, sensori, comandi di apertura e chiusura.",
+    "CLIMATIZZAZIONE": "Il condizionatore dell'abitacolo, aria fredda: compressore AC, condensatore, evaporatore, gas refrigerante.",
+    "RISCALDAMENTO": "Il riscaldamento dell'abitacolo, aria calda: riscaldatore Webasto, scambiatori di calore, ventole, condotti dell'aria calda.",
+    "SEDILI": "I sedili del conducente e dei passeggeri: regolazioni, sospensione del sedile, rivestimenti, cinture. Include il sedile dell'autista."
+  },
+  "SISTEMI_DI_BORDO": {
+    "VIDEOSORVEGLIANZA": "Le telecamere di bordo: telecamere, monitor, registratore video DVR.",
+    "TACHIGRAFO": "Il tachigrafo e la registrazione dei dati di guida: tachigrafo digitale, schede, sensori di velocita' dedicati.",
+    "INFOTAINMENT": "L'informazione e l'intrattenimento per i passeggeri: display, annunci vocali, indicatori di percorso, audio.",
+    "TELEMATICA": "La connettivita' della flotta: unita' di bordo, GPS, trasmissione dati, localizzazione.",
+    "BIGLIETTAZIONE": "Il sistema dei biglietti: obliteratrici, validatori, emettitrici, lettori di carte.",
+    "ACCESSIBILITA": "L'accesso dei disabili: pedana o rampa, inginocchiamento del bus, ancoraggi per carrozzine."
+  },
+  "TRASVERSALE": {
+    "GENERALE": "Manutenzione programmata o intervento senza un sistema preciso identificabile."
+  }
+}

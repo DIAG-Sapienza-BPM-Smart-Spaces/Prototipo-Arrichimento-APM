@@ -1,0 +1,47 @@
+{
+  "_meta": {
+    "purpose": "NAMING reference only for the SINTOMO field — NOT the taxonomy. Turns an induced symptom cluster into a standard workshop term. The categories themselves are still discovered from data by clustering; this only standardises their NAME. Never consulted at classification time.",
+    "language": "it",
+    "extensible": true,
+    "style_rule": "Ogni descrizione: UNA frase semplice che descrive il SINTOMO riportato (il problema osservato). Mai le attivita' di riparazione (diagnosi, sostituzione, controllo). Nessun avviso incrociato tipo 'da non confondere con X'.",
+    "note": "Written once, coherently, from the symptom space actually seen in the corpus. Mirrors reference_vocabulary.json (which does this for SISTEMA)."
+  },
+  "PERDITE": {
+    "PERDITA_LIQUIDO_REFRIGERANTE": "Fuoriuscita di liquido refrigerante o antigelo dal circuito di raffreddamento.",
+    "PERDITA_ACQUA": "Fuoriuscita di acqua dal veicolo.",
+    "PERDITA_OLIO": "Fuoriuscita di olio, dal motore o da altri circuiti.",
+    "PERDITA_ARIA": "Fuoriuscita di aria compressa dall'impianto pneumatico.",
+    "PERDITA_CARBURANTE": "Fuoriuscita di gasolio dal circuito di alimentazione."
+  },
+  "AVVIAMENTO_POTENZA": {
+    "MANCATO_AVVIAMENTO": "Il motore non parte o non si accende; il bus non si avvia.",
+    "RIDUZIONE_POTENZA": "Perdita di potenza, mancanza di accelerazione o limitazione della potenza del motore.",
+    "SPEGNIMENTO_IN_MARCIA": "Il motore si spegne o si arresta durante la marcia."
+  },
+  "SEGNALAZIONI": {
+    "SPIA_ACCESA": "Una spia o luce di segnalazione accesa sul cruscotto."
+  },
+  "FUNZIONAMENTO": {
+    "NON_FUNZIONANTE": "Un componente o impianto non funziona affatto.",
+    "RENDIMENTO_SCARSO": "Un impianto funziona ma in modo insufficiente o inefficiente.",
+    "BLOCCO": "Un componente resta bloccato, non si muove o non si regola."
+  },
+  "MECCANICI": {
+    "RUMORE_VIBRAZIONE": "Rumore, vibrazione o strattoni anomali.",
+    "ROTTURA": "Rottura o cedimento meccanico di un componente.",
+    "USURA": "Componente usurato o consumato.",
+    "PNEUMATICO_DANNEGGIATO": "Pneumatico bucato, forato, consumato o a pressione insufficiente."
+  },
+  "ELETTRICO_ELETTRONICO": {
+    "GUASTO_ELETTRICO": "Guasto elettrico: cortocircuito, connettore, cablaggio o componente elettrico.",
+    "GUASTO_COMUNICAZIONE": "Mancata comunicazione o connessione tra centraline o dispositivi.",
+    "GUASTO_SENSORE": "Un sensore risulta guasto o fornisce letture errate."
+  },
+  "EMISSIONI": {
+    "GUASTO_ADBLUE": "Malfunzionamento del sistema AdBlue/SCR: dosaggio, pompa, iniezione o sensore."
+  },
+  "ALTRO_SINTOMO": {
+    "ODORE_ANOMALO": "Odore anomalo di gas, gasolio o bruciato.",
+    "NESSUN_GUASTO": "Nessun guasto: manutenzione programmata o controllo di routine."
+  }
+}

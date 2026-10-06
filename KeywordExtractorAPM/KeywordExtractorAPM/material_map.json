@@ -1,0 +1,161 @@
+{
+  "_meta": {
+    "description": "Maps material/Definizione values to sistema and componente keywords for cross-validation | v2: revision-deck materials added"
+  },
+  "ELECTRONIC CONTROL UNIT": {
+    "sistema": "IMPIANTO_ELETTRICO",
+    "componente": "CENTRALINA_ECU"
+  },
+  "STEROWNIK SILNIKA": {
+    "sistema": "IMPIANTO_ELETTRICO",
+    "componente": "CENTRALINA_ECU"
+  },
+  "COOLANT PUMP": {
+    "sistema": "RAFFREDDAMENTO",
+    "componente": "POMPA_ACQUA"
+  },
+  "ADBLUE PUMP": {
+    "sistema": "ADBLUE",
+    "componente": "POMPA_ADBLUE"
+  },
+  "CONDENSER": {
+    "sistema": "CLIMATIZZAZIONE",
+    "componente": "CONDENSATORE"
+  },
+  "AIR-CONDITIONING COMPRESSOR": {
+    "sistema": "CLIMATIZZAZIONE",
+    "componente": "COMPRESSORE_AC"
+  },
+  "AIR -CONDITIONING COMPRESSOR": {
+    "sistema": "CLIMATIZZAZIONE",
+    "componente": "COMPRESSORE_AC"
+  },
+  "AIR-CONDITIONING PIPE": {
+    "sistema": "CLIMATIZZAZIONE",
+    "componente": "TUBO_FLESSIBILE"
+  },
+  "FLEXIBLE HOSE": {
+    "sistema": "RAFFREDDAMENTO",
+    "componente": "TUBO_FLESSIBILE"
+  },
+  "BRAKING HOSE": {
+    "sistema": "FRENI",
+    "componente": "TUBO_FLESSIBILE"
+  },
+  "GASKET": {
+    "sistema": "MOTORE",
+    "componente": "GUARNIZIONE"
+  },
+  "SEAL RING": {
+    "sistema": "MOTORE",
+    "componente": "GUARNIZIONE"
+  },
+  "O-RING": {
+    "sistema": "MOTORE",
+    "componente": "O_RING"
+  },
+  "FILTER CARTRIDGE": {
+    "sistema": "MOTORE",
+    "componente": "FILTRO"
+  },
+  "OIL FILTER": {
+    "sistema": "MOTORE",
+    "componente": "FILTRO"
+  },
+  "LEVEL SENSOR": {
+    "sistema": "IMPIANTO_ELETTRICO",
+    "componente": "SENSORE_LIVELLO"
+  },
+  "SPEED SENSOR": {
+    "sistema": "IMPIANTO_ELETTRICO",
+    "componente": "SENSORE_VELOCITA"
+  },
+  "LP PRESSURE SWITCH": {
+    "sistema": "CLIMATIZZAZIONE",
+    "componente": "SENSORE_LIVELLO"
+  },
+  "HEIGHT CONTROL VALVE": {
+    "sistema": "SOSPENSIONI",
+    "componente": "VALVOLA"
+  },
+  "VALVE": {
+    "sistema": "MOTORE",
+    "componente": "VALVOLA"
+  },
+  "THREE WAY VALVE 38MM WITH EPDM SEAL": {
+    "sistema": "RAFFREDDAMENTO",
+    "componente": "VALVOLA"
+  },
+  "TWO-WAY VALVE SEALED EPDM": {
+    "sistema": "RAFFREDDAMENTO",
+    "componente": "VALVOLA"
+  },
+  "INJECTOR": {
+    "sistema": "MOTORE",
+    "componente": "INIETTORE"
+  },
+  "AKUMULATOR 240AH PROMOTIVE EFB VARTA": {
+    "sistema": "IMPIANTO_ELETTRICO",
+    "componente": "BATTERIA"
+  },
+  "ELECTROMAGNETIC CLUTCH WITH PULLEY": {
+    "sistema": "CLIMATIZZAZIONE",
+    "componente": "FRIZIONE_ELETTROMAGNETICA"
+  },
+  "RECEIVER-FILTERDRYER": {
+    "sistema": "CLIMATIZZAZIONE",
+    "componente": "ESSICCATORE"
+  },
+  "ENGINE MOUNTING RUBBER": {
+    "sistema": "MOTORE",
+    "componente": "SUPPORTO_MOTORE"
+  },
+  "RUBBER FOR STABALIZER": {
+    "sistema": "SOSPENSIONI",
+    "componente": "STABILIZZATORE"
+  },
+  "AIR BELLOW - DRIVE AXLE FIRESTONE": {
+    "sistema": "SOSPENSIONI",
+    "componente": "SOFFIETTO_ARIA"
+  },
+  "CONNECTOR": {
+    "sistema": "IMPIANTO_ELETTRICO",
+    "componente": "GENERALE"
+  },
+  "FUEL PUMP": {
+    "sistema": "ALIMENTAZIONE",
+    "componente": "POMPA GASOLIO"
+  },
+  "GAS SPRING": {
+    "sistema": "CARROZZERIA",
+    "componente": "MOLLA A GAS"
+  },
+  "ZLACZKA REDUKC. 57/50X150 WZM.OPLOT V2": {
+    "sistema": "RAFFREDDAMENTO",
+    "componente": "MANICOTTO"
+  },
+  "WKŁAD FILTRA DPF": {
+    "sistema": "SCARICO",
+    "componente": "FILTRO DPF"
+  },
+  "ACCELERATOR PEDAL": {
+    "sistema": "IMPIANTO_ELETTRICO",
+    "componente": "PEDALE ACCELERATORE"
+  },
+  "NOX-SENSOR": {
+    "sistema": "SCARICO",
+    "componente": "SENSORE NOX"
+  },
+  "NOX- SENSOR": {
+    "sistema": "SCARICO",
+    "componente": "SENSORE NOX"
+  },
+  "CZUJNIK NOX": {
+    "sistema": "SCARICO",
+    "componente": "SENSORE NOX"
+  },
+  "EXPANSION VALVE": {
+    "sistema": "CLIMATIZZAZIONE",
+    "componente": "VALVOLA"
+  }
+}
