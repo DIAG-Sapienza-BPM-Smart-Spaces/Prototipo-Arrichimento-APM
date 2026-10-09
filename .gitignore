@@ -1,0 +1,16 @@
+__pycache__/
+*.py[cod]
+.DS_Store
+.venv/
+venv/
+.env
+~$*
+data/input/*
+!data/input/.gitkeep
+data/output/*
+!data/output/.gitkeep
+data/dashboard/*
+!data/dashboard/.gitkeep
+data/dashboard_state/*
+!data/dashboard_state/.gitkeep
+data/extractor_state/taxonomy_free/*.bak

@@ -1,0 +1,10 @@
+.git/
+__pycache__/
+*.pyc
+.DS_Store
+.venv/
+venv/
+.env
+data/
+docs/
+key_extractor/

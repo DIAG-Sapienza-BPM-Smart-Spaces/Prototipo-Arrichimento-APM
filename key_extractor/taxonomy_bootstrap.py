@@ -1,0 +1,470 @@
+"""
+taxonomy_bootstrap.py — build a taxonomy FROM THE DATA, with no vocabulary given.
+
+Regime "C": the model is never shown a list. It describes each record's system in
+its own words; the vocabulary is then induced from those descriptions.
+
+RESULT ON 150 RECORDS (first real run)
+--------------------------------------
+From zero vocabulary the model produced 47 distinct phrases -> 11 clean categories,
+and 8 of them coincide with the hand-written taxonomy (ALIMENTAZIONE, CLIMATIZZAZIONE,
+FRENI, MOTORE, IDRAULICO, SOSPENSIONI, TRASMISSIONE, RAFFREDDAMENTO). It also found
+two things the hand-written taxonomy misses:
+  - CENTRALINE_ELETTRONICHE (24 records — the largest category of all)
+  - RISCALDAMENTO (14) — cabin heating, which the human taxonomy folds into
+    CLIMATIZZAZIONE even though they are separate systems on a bus.
+
+C is a BOOTSTRAP, not a different architecture. Once the taxonomy is induced and
+frozen, discover.py / promote.py / nightly_discovery.py run on top of it unchanged.
+
+    Phase 1  describe freely      (1 LLM call per record — CACHED)
+    Phase 2  merge synonyms       (strip boilerplate, average-linkage clustering)
+    Phase 3  name each category   (standard term from reference_vocabulary if one
+                                   fits; invent a name only when nothing does)
+    Phase 3b MERGE BY NAME        (clusters that resolve to the same standard term
+                                   are one category — the reference vocabulary
+                                   performs semantic merges the embedding missed,
+                                   e.g. alimentazione + carburante + iniezione diesel)
+    Phase 4  freeze               -> induced_taxonomy.json
+
+REQUIRES: name_normalizer.py and ../data/resources/reference_vocabulary.json
+
+TWO-STEP USAGE (Phase 1 is the expensive part, so it is cached)
+--------------------------------------------------------------
+    python taxonomy_bootstrap.py --pool "file.xlsx" --limit 150 --preview
+    python taxonomy_bootstrap.py --pool "file.xlsx" --limit 150 --sim 0.72
+    python taxonomy_bootstrap.py --pool "file.xlsx" --offset 150 --limit 150 --preview
+    python taxonomy_bootstrap.py --self-test
+"""
+import sys
+import json
+import re
+from pathlib import Path
+from collections import Counter
+
+import numpy as np
+import config
+
+OUT_DIR = config.TAXONOMY_FREE_DIR
+TEXT_COLS = ["Testo Breve 1 (Originale)", "Testo Breve 1"]
+
+PREVIEW_THRESHOLDS = [0.60, 0.65, 0.70, 0.75, 0.80, 0.85]
+DEFAULT_SIM = 0.72
+DEFAULT_MIN_SUPPORT = 3
+
+BOILERPLATE = ("SISTEMA_DI_", "SISTEMA_DEL_", "SISTEMA_DELLA_", "SISTEMA_",
+               "IMPIANTO_DI_", "IMPIANTO_", "CIRCUITO_DI_", "CIRCUITO_",
+               "GRUPPO_DI_", "GRUPPO_", "APPARATO_", "DISPOSITIVO_DI_")
+
+
+# ==========================================================================
+# Pure logic — unit-tested by --self-test
+# ==========================================================================
+def strip_boilerplate(phrase):
+    """'sistema di raffreddamento' -> 'raffreddamento'."""
+    s = str(phrase).upper().strip()
+    s = re.sub(r"[^A-ZÀ-Ù0-9\s_]", " ", s)
+    s = re.sub(r"\s+", "_", s.strip())
+    for p in BOILERPLATE:
+        if s.startswith(p):
+            s = s[len(p):]
+            break
+    return s.replace("_", " ").strip().lower() or str(phrase).strip().lower()
+
+
+def average_linkage(V, sim_threshold):
+    """Agglomerative clustering, AVERAGE linkage on cosine. Resists chaining."""
+    n = len(V)
+    if n == 0:
+        return []
+    Vn = np.asarray(V, dtype=float)
+    Vn = Vn / np.clip(np.linalg.norm(Vn, axis=1, keepdims=True), 1e-12, None)
+    S = Vn @ Vn.T
+    clusters = [[i] for i in range(n)]
+    while len(clusters) > 1:
+        best, bi, bj = -1.0, None, None
+        for a in range(len(clusters)):
+            for b in range(a + 1, len(clusters)):
+                pairs = [S[i, j] for i in clusters[a] for j in clusters[b]]
+                s = float(sum(pairs) / len(pairs))
+                if s > best:
+                    best, bi, bj = s, a, b
+        if bi is None or best < sim_threshold:
+            break
+        clusters[bi] += clusters[bj]
+        del clusters[bj]
+    labels = [-1] * n
+    for cid, c in enumerate(sorted(clusters, key=lambda x: -len(x))):
+        for i in c:
+            labels[i] = cid
+    return labels
+
+
+def group_by_label(labels, items):
+    out = {}
+    for lab, it in zip(labels, items):
+        out.setdefault(lab, []).append(it)
+    return out
+
+
+def merge_tree(vecs, phrases, thresholds):
+    tree = []
+    for t in thresholds:
+        labels = average_linkage(vecs, t)
+        groups = group_by_label(labels, phrases)
+        tree.append({"threshold": t, "n_clusters": len(groups),
+                     "clusters": sorted(groups.values(), key=lambda g: -len(g))})
+    return tree
+
+
+def taxonomy_key(name):
+    s = str(name).upper().strip()
+    s = re.sub(r"[^A-ZÀ-Ù0-9\s_]", " ", s)
+    s = re.sub(r"\s+", "_", s.strip())
+    for p in BOILERPLATE:
+        if s.startswith(p):
+            s = s[len(p):]
+            break
+    return s or "CATEGORIA"
+
+
+def resolve_name(llm_answer, candidates, fallback_name):
+    ans = taxonomy_key(llm_answer) if llm_answer else "NONE"
+    if ans and ans != "NONE":
+        for c in candidates:
+            if taxonomy_key(c) == ans:
+                return c, "standard"
+    return fallback_name, "invented"
+
+
+def merge_by_key(categories):
+    """
+    Phase 3b. Several embedding-clusters can resolve to the SAME standard term
+    (e.g. 'alimentazione', 'carburante', 'iniezione diesel' -> ALIMENTAZIONE).
+    Those are one category: sum the support, union the phrases. Without this the
+    taxonomy ends up with duplicate keys.
+    """
+    merged = {}
+    for c in categories:
+        k = c["key"]
+        if k not in merged:
+            merged[k] = {**c, "phrases": list(c["phrases"]), "n_clusters": 1}
+        else:
+            m = merged[k]
+            m["support"] += c["support"]
+            m["phrases"] = list(dict.fromkeys(m["phrases"] + c["phrases"]))
+            m["n_clusters"] += 1
+            if m["status"] == "invented" and c["status"] == "standard":
+                m["status"], m["name"], m["description"] = (
+                    "standard", c["name"], c["description"])
+    return sorted(merged.values(), key=lambda x: -x["support"])
+
+
+# ==========================================================================
+# LLM prompts
+# ==========================================================================
+PROMPT_DESCRIBE = """Sei un tecnico esperto di autobus. Leggi questo rapporto di manutenzione.
+
+Rapporto: {text}
+
+A quale sistema del veicolo si riferisce?
+Indicalo con parole tue, 1-3 parole, SENZA scrivere "sistema di" davanti.
+NON usare categorie generiche come "generale" o "varie".
+
+Rispondi in JSON: {{"sistema": "..."}}"""
+
+# How many real maintenance records to show the naming step per cluster.
+#
+# MEASURED 2026-07: feeding real records to the naming step made naming WORSE,
+# consistently, on both slices:
+#     freni          -> PNEUMATICI     (brake jobs mention wheels/tyres)
+#     riscaldamento  -> RAFFREDDAMENTO (bus heating runs off the engine
+#                                       coolant circuit, so records say
+#                                       "raffreddamento" for a heating fault)
+#     idraulico      -> MANUTENZIONE_T1 (meaningless invention)
+# The records add incidental vocabulary and the model names what it reads
+# rather than the system the cluster denotes. Kept behind a flag, OFF by
+# default, so the choice stays measurable instead of merely remembered.
+EXAMPLES_PER_CLUSTER = 6
+USE_RECORD_EXAMPLES = False
+
+PROMPT_MATCH_STANDARD = """Un sistema automatico ha raggruppato questi modi di dire,
+che secondo lui indicano lo STESSO sistema del veicolo:
+
+{phrases}
+
+{examples}Ecco alcuni termini STANDARD da manuale d'officina:
+{options}
+
+Il gruppo corrisponde a UNO di questi termini standard, oppure a NESSUNO?
+Giudica dal significato, non dalle parole. Le descrizioni sopra definiscono i
+confini di ogni termine: usale.
+
+Rispondi in JSON: {{"corrisponde_a": "<termine esatto oppure NONE>"}}"""
+
+PROMPT_INVENT = """Questi modi di dire indicano lo STESSO sistema di un autobus:
+
+{phrases}
+
+{examples}Nessun termine standard corrisponde. Dai un nome tecnico conciso (1-3 parole,
+MAIUSCOLO) come lo scriverebbe un manuale d'officina, piu' una breve descrizione.
+Evita parole inventate.
+
+Rispondi in JSON: {{"nome": "...", "descrizione": "..."}}"""
+
+
+def _ask(llm, prompt):
+    raw = llm.invoke(prompt)
+    txt = re.sub(r"```json|```", "", raw)
+    s, e = txt.find("{"), txt.rfind("}")
+    return json.loads(txt[s:e + 1])
+
+
+# ==========================================================================
+# Phase 1 — describe (cached)
+# ==========================================================================
+def cache_path(pool_path, offset, limit):
+    stem = Path(pool_path).stem[:40].replace(" ", "_")
+    return OUT_DIR / f"c_descriptions__{stem}__{offset}_{limit}.json"
+
+
+def describe(pool_path, offset, limit):
+    import pandas as pd
+    from text_cleaner import clean_text
+    from model_provider import create_llm
+
+    OUT_DIR.mkdir(parents=True, exist_ok=True)
+    cp = cache_path(pool_path, offset, limit)
+    if cp.exists():
+        data = json.loads(cp.read_text(encoding="utf-8"))
+        print(f"[1/4] Using cached descriptions: {cp.name} ({len(data)} records)")
+        return [(d["text"], d["phrase"]) for d in data]
+
+    df = pd.read_excel(pool_path)
+    col = next((c for c in TEXT_COLS if c in df.columns), None)
+    if col is None:
+        raise SystemExit(f"Need one of {TEXT_COLS} in the file.")
+    raw = [str(df[col].iloc[i]) for i in range(len(df))]
+    raw = raw[offset: offset + limit] if limit else raw[offset:]
+    texts = [clean_text(t) or t for t in raw]
+
+    llm = create_llm()
+    print(f"[1/4] Describing {len(texts)} records with NO vocabulary given...")
+    out = []
+    for i, t in enumerate(texts):
+        try:
+            p = str(_ask(llm, PROMPT_DESCRIBE.format(text=t[:1200]))
+                    .get("sistema", "")).strip()
+        except Exception as ex:
+            p = f"(error: {ex})"
+        out.append({"text": t, "phrase": p})
+        print(f"   [{i+1}/{len(texts)}] {p}")
+    cp.write_text(json.dumps(out, ensure_ascii=False, indent=2), encoding="utf-8")
+    print(f"      cached -> {cp.name}")
+    return [(d["text"], d["phrase"]) for d in out]
+
+
+# ==========================================================================
+# Run
+# ==========================================================================
+def run(pool_path, offset, limit, sim, min_support, preview):
+    from validator import embedder
+
+    pairs = describe(pool_path, offset, limit)
+    phrases = [p for _, p in pairs]
+    counts = Counter(strip_boilerplate(p) for p in phrases)
+    uniq = sorted(counts)
+    print(f"\n[2/4] {len(phrases)} records -> {len(uniq)} distinct phrases")
+    for u in uniq:
+        print(f"        {u:40} {counts[u]}x")
+
+    vecs = np.array([embedder.embed_query(u) for u in uniq], dtype=float)
+
+    if preview:
+        print("\n=== GRANULARITY PREVIEW — pick a threshold with --sim ===")
+        lines = ["# Granularity preview\n",
+                 f"Records: {len(phrases)}  ·  distinct phrases: {len(uniq)}\n"]
+        for step in merge_tree(vecs, uniq, PREVIEW_THRESHOLDS):
+            head = f"threshold {step['threshold']:.2f} -> {step['n_clusters']} categories"
+            print(f"\n{head}")
+            lines.append(f"\n## {head}")
+            for g in step["clusters"]:
+                sup = sum(counts[p] for p in g)
+                print(f"    ({sup:3} rec) {g}")
+                lines.append(f"- ({sup} rec) {', '.join(g)}")
+        (OUT_DIR / "c_granularity_preview.md").write_text("\n".join(lines),
+                                                          encoding="utf-8")
+        print(f"\nSaved: {OUT_DIR/'c_granularity_preview.md'}")
+        return
+
+    labels = average_linkage(vecs, sim)
+    groups = group_by_label(labels, uniq)
+    kept = {k: g for k, g in groups.items()
+            if sum(counts[p] for p in g) >= min_support}
+    print(f"\n[2/4] threshold {sim} -> {len(groups)} clusters, "
+          f"{len(kept)} with support >= {min_support}")
+
+    from model_provider import create_llm
+    from name_normalizer import load_reference, shortlist
+    llm = create_llm()
+    reference = load_reference()
+    ref_vecs = {t: embedder.embed_query(f"{t}: {d}") for t, d in reference.items()}
+
+    print(f"\n[3/4] Naming {len(kept)} clusters "
+          "(standard term preferred, invent only if none fits)...")
+    raw_categories = []
+    for _, g in sorted(kept.items(), key=lambda kv: -sum(counts[p] for p in kv[1])):
+        support = sum(counts[p] for p in g)
+        centroid = np.mean([vecs[uniq.index(p)] for p in g], axis=0)
+        cand = [t for t, _ in shortlist(centroid, ref_vecs, 4)]
+        options = "\n".join(f"- {t}: {reference[t]}" for t in cand)
+        phr = "\n".join(f"- {p}" for p in g)
+        # real maintenance records behind this cluster -> context for naming.
+        # A bare phrase like "sedile autista" is ambiguous; the records are not.
+        if USE_RECORD_EXAMPLES:
+            member = {p for p in g}
+            ex_texts = [t for t, p in pairs if strip_boilerplate(p) in member]
+            body = "\n".join(f"- {t[:200]}"
+                             for t in ex_texts[:EXAMPLES_PER_CLUSTER])
+            ex = f"Rapporti di manutenzione reali di questo gruppo:\n{body}\n\n" \
+                 if body else ""
+        else:
+            ex = ""
+        try:
+            ans = str(_ask(llm, PROMPT_MATCH_STANDARD.format(phrases=phr,
+                                                             examples=ex,
+                                                             options=options))
+                      .get("corrisponde_a", ""))
+        except Exception:
+            ans = "NONE"
+        name, status = resolve_name(ans, cand, fallback_name=None)
+        if status == "standard":
+            desc = reference[name]
+        else:
+            try:
+                inv = _ask(llm, PROMPT_INVENT.format(phrases=phr, examples=ex))
+                name = str(inv.get("nome", g[0])).strip()
+                desc = str(inv.get("descrizione", "")).strip()
+            except Exception:
+                name, desc = g[0].upper(), ""
+            status = "invented"
+        raw_categories.append({"key": taxonomy_key(name), "name": name,
+                               "description": desc, "status": status,
+                               "support": support, "phrases": g})
+        print(f"   {taxonomy_key(name):28} support {support:3}  [{status}]  from {g}")
+
+    # ---- Phase 3b: merge clusters that resolved to the same term ----
+    categories = merge_by_key(raw_categories)
+    n_merged = len(raw_categories) - len(categories)
+    if n_merged:
+        print(f"\n[3b] merged {len(raw_categories)} clusters -> {len(categories)} "
+              "categories (same standard term)")
+        for c in categories:
+            if c["n_clusters"] > 1:
+                print(f"     {c['key']}: {c['n_clusters']} clusters joined "
+                      f"-> support {c['support']}")
+
+    # ---- Phase 4: freeze ----
+    induced = {
+        "_meta": {
+            "source": "induced from data (regime C — no vocabulary given to the model)",
+            "pool": str(Path(pool_path).name), "offset": offset, "limit": limit,
+            "records": len(phrases), "cluster_threshold": sim,
+            "min_support": min_support, "version": "1.0",
+            "note": "Drop-in replacement for the 'sistema' section of keyword_taxonomy.json."
+        },
+        "sistema": {
+            "description": "Vehicle system, induced from the corpus",
+            "values": [c["key"] for c in categories] + ["ALTRO"],
+            "descriptions": {c["key"]: c["description"] for c in categories}
+        },
+        "_provenance": categories
+    }
+    # per-slice filename: two runs on different offsets must not overwrite
+    # each other — comparing slices IS the stability test.
+    slug = f"{offset}_{limit}"
+    out = OUT_DIR / f"induced_taxonomy__{slug}.json"
+    out.write_text(json.dumps(induced, ensure_ascii=False, indent=2), encoding="utf-8")
+
+    n_std = sum(1 for c in categories if c["status"] == "standard")
+    covered = sum(c["support"] for c in categories)
+    lines = ["# Induced taxonomy (regime C)\n",
+             f"Records: **{len(phrases)}** (offset {offset})  ·  distinct phrases: "
+             f"{len(uniq)}  ·  threshold: {sim}  ·  min support: {min_support}\n",
+             f"Categories: **{len(categories)}**  "
+             f"({n_std} standard-named, {len(categories)-n_std} invented)  ·  "
+             f"records covered: {covered}/{len(phrases)}\n",
+             "| Category | Support | Name source | Clusters joined | Phrases |",
+             "|---|---|---|---|---|"]
+    for c in categories:
+        lines.append(f"| {c['key']} | {c['support']} | {c['status']} | "
+                     f"{c['n_clusters']} | {', '.join(c['phrases'])} |")
+    lines.append("\n_Drop the `sistema` section of induced_taxonomy.json into the "
+                 "pipeline to run the existing system on a data-derived vocabulary._")
+    (OUT_DIR / f"induced_taxonomy_report__{slug}.md").write_text(
+        "\n".join(lines), encoding="utf-8")
+    print("\n" + "\n".join(lines))
+    print(f"\n[4/4] Saved: {out}")
+
+
+# ==========================================================================
+def _self_test():
+    print("taxonomy_bootstrap self-test...")
+
+    assert strip_boilerplate("sistema di raffreddamento") == "raffreddamento"
+    assert strip_boilerplate("Sistema Freni") == "freni"
+    assert strip_boilerplate("sistema freni") == strip_boilerplate("sistema di freni")
+
+    a = np.array([[1, 0, 0], [0.99, 0.10, 0]], dtype=float)
+    bridge = np.array([[0.72, 0.70, 0]], dtype=float)
+    b = np.array([[0.10, 0.99, 0], [0, 1, 0]], dtype=float)
+    assert len(set(average_linkage(np.vstack([a, bridge, b]), 0.90))) >= 2
+
+    V = np.array([[1, 0], [0.9, 0.1], [0, 1], [0.1, 0.9]], dtype=float)
+    tree = merge_tree(V, ["a", "b", "c", "d"], [0.99, 0.5])
+    assert tree[0]["n_clusters"] >= tree[1]["n_clusters"]
+
+    assert taxonomy_key("sistema di raffreddamento") == "RAFFREDDAMENTO"
+    cands = ["RAFFREDDAMENTO", "CLIMATIZZAZIONE"]
+    assert resolve_name("RAFFREDDAMENTO", cands, None) == ("RAFFREDDAMENTO", "standard")
+    assert resolve_name("NONE", cands, None) == (None, "invented")
+
+    # Phase 3b — the real bug from run #1: three clusters, one term
+    cats = [
+        {"key": "ALIMENTAZIONE", "name": "ALIMENTAZIONE", "description": "d",
+         "status": "standard", "support": 7, "phrases": ["alimentazione"]},
+        {"key": "ALIMENTAZIONE", "name": "ALIMENTAZIONE", "description": "d",
+         "status": "standard", "support": 6, "phrases": ["carburante", "carburazione"]},
+        {"key": "ALIMENTAZIONE", "name": "ALIMENTAZIONE", "description": "d",
+         "status": "standard", "support": 3, "phrases": ["iniezione diesel"]},
+        {"key": "FRENI", "name": "FRENI", "description": "d",
+         "status": "standard", "support": 11, "phrases": ["freni"]},
+    ]
+    merged = merge_by_key(cats)
+    assert len(merged) == 2, merged
+    ali = next(c for c in merged if c["key"] == "ALIMENTAZIONE")
+    assert ali["support"] == 16 and ali["n_clusters"] == 3
+    assert set(ali["phrases"]) == {"alimentazione", "carburante", "carburazione",
+                                   "iniezione diesel"}
+    assert merged[0]["key"] == "ALIMENTAZIONE"      # sorted by support
+    # no duplicate keys survive
+    assert len({c["key"] for c in merged}) == len(merged)
+    print("taxonomy_bootstrap self-test PASSED")
+
+
+if __name__ == "__main__":
+    args = sys.argv[1:]
+    if "--self-test" in args:
+        _self_test()
+    else:
+        pool = args[args.index("--pool") + 1] if "--pool" in args else None
+        offset = int(args[args.index("--offset") + 1]) if "--offset" in args else 0
+        limit = int(args[args.index("--limit") + 1]) if "--limit" in args else 0
+        sim = float(args[args.index("--sim") + 1]) if "--sim" in args else DEFAULT_SIM
+        ms = (int(args[args.index("--min-support") + 1])
+              if "--min-support" in args else DEFAULT_MIN_SUPPORT)
+        if not pool:
+            print('Usage: python taxonomy_bootstrap.py --pool "file.xlsx" --limit 150 '
+                  '[--offset 0] [--preview] [--sim 0.72] [--min-support 3]')
+        else:
+            run(pool, offset, limit, sim, ms, preview=("--preview" in args))
